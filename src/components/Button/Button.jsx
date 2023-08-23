@@ -1,19 +1,18 @@
-import { Component } from 'react';
+import PropTypes from 'prop-types';
 
-class Button extends Component {
-  handlerLoadMore = e => {
-    this.props.handlerFetch(this.props.searchText, e.target.nodeName);
-  };
-  render() {
-    return (
-      <button
-        onClick={this.handlerLoadMore}
-        className="button-load-more"
-        type="button"
-      >
-        Load more
-      </button>
-    );
-  }
-}
+const Button = ({ handlerLoadMore }) => {
+  return (
+    <button
+      onClick={() => handlerLoadMore()}
+      className="button-load-more"
+      type="button"
+    >
+      Load more
+    </button>
+  );
+};
 export default Button;
+
+Button.propTypes = {
+  handlerLoadMore: PropTypes.func.isRequired,
+};
