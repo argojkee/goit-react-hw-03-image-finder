@@ -2,12 +2,73 @@ import { Component } from 'react';
 import SearchBar from './SearchBar/SearchBar';
 import ImageGalery from './ImageGalery/ImageGalery';
 import Modal from './Modal/Modal';
+import fetchPixabay from 'services/pixabay';
+import Button from './Button/Button';
+import Loader from './Loader/Loader';
 
 export class App extends Component {
   state = {
     searchText: '',
+    currentPage: 1,
+    totalHits: 0,
+    items: [],
+    error: '',
+    isLoading: false,
     isShowModal: false,
     selectedIMG: '',
+  };
+
+  componentDidUpdate = (prevProps, prevState) => {
+    if (prevState.searchText !== this.state.searchText) {
+      this.setState({ currentPage: 1, items: [], error: '', isLoading: true });
+      fetchPixabay(this.state.searchText, 1)
+        .then(resp => {
+          if (!resp.ok) {
+            this.setState({
+              error: 'Sorry, something not good',
+            });
+            throw new Error();
+          }
+
+          return resp.json();
+        })
+        .then(data => {
+          if (data.totalHits === 0) {
+            this.setState({ error: 'Sorry, nothing' });
+          } else {
+            this.setState({
+              error: '',
+              items: data.hits,
+              totalHits: data.totalHits,
+              isLoading: false,
+            });
+          }
+        })
+        .catch(err => console.log(err))
+        .finally(() => {
+          this.setState({ isLoading: false });
+        });
+    } else if (prevState.currentPage < this.state.currentPage) {
+      this.setState({ isLoading: true });
+      fetchPixabay(this.state.searchText, this.state.currentPage)
+        .then(resp => {
+          if (!resp.ok) {
+            this.setState({ error: 'Sorry, something not good', items: [] });
+            throw new Error();
+          }
+          return resp.json();
+        })
+        .then(data => {
+          this.setState({
+            error: '',
+            items: [...prevState.items, ...data.hits],
+          });
+        })
+        .catch(err => console.log(err))
+        .finally(() => {
+          this.setState({ isLoading: false });
+        });
+    }
   };
 
   handlerCloseModal = () => {
@@ -22,8 +83,12 @@ export class App extends Component {
     this.setState({ isShowModal: true, selectedIMG: original });
   };
 
+  handlerLoadMore = () => {
+    this.setState({ currentPage: this.state.currentPage + 1 });
+  };
+
   handlerSubmit = value => {
-    this.setState({ searchText: value.toLowerCase().trim() });
+    this.setState({ searchText: value });
   };
 
   render() {
@@ -36,14 +101,70 @@ export class App extends Component {
             selectedIMG={this.state.selectedIMG}
           />
         )}
-        <ImageGalery
-          searchText={this.state.searchText}
-          handlerImageClick={this.handlerImageClick}
-        />
+        {this.state.items.length > 0 && (
+          <ImageGalery
+            items={this.state.items}
+            handlerImageClick={this.handlerImageClick}
+          />
+        )}
+        {this.state.isLoading && <Loader />}
+        {this.state.items.length < this.state.totalHits &&
+          !this.state.error &&
+          !this.state.isLoading && (
+            <Button handlerLoadMore={this.handlerLoadMore} />
+          )}
+        {this.state.error && <p className="error">{this.state.error}</p>}
       </>
     );
   }
 }
+
+// import { Component } from 'react';
+// import SearchBar from './SearchBar/SearchBar';
+// import ImageGalery from './ImageGalery/ImageGalery';
+// import Modal from './Modal/Modal';
+
+// export class App extends Component {
+//   state = {
+//     searchText: '',
+//     isShowModal: false,
+//     selectedIMG: '',
+//   };
+
+//   handlerCloseModal = () => {
+//     this.setState({ isShowModal: false });
+//   };
+
+//   handlerImageClick = ({
+//     target: {
+//       dataset: { original },
+//     },
+//   }) => {
+//     this.setState({ isShowModal: true, selectedIMG: original });
+//   };
+
+//   handlerSubmit = value => {
+//     this.setState({ searchText: value.toLowerCase().trim() });
+//   };
+
+//   render() {
+//     return (
+//       <>
+//         <SearchBar onSubmit={this.handlerSubmit} />
+//         {this.state.isShowModal && (
+//           <Modal
+//             handlerCloseModal={this.handlerCloseModal}
+//             selectedIMG={this.state.selectedIMG}
+//           />
+//         )}
+//         <ImageGalery
+//           searchText={this.state.searchText}
+//           handlerImageClick={this.handlerImageClick}
+//         />
+//       </>
+//     );
+//   }
+// }
 
 // import SearchBar from './SearchBar/SearchBar';
 // import ImageGalery from './ImageGalery/ImageGalery';
@@ -151,7 +272,7 @@ export class App extends Component {
 //   render() {
 //     return (
 //       <>
-//         <SearchBar handlerFetch={this.handlerFetch} />;
+//         <SearchBar onSubmit={this.handlerFetch} />;
 //         {this.state.isModal && (
 //           <Modal
 //             handlerOverlayClick={this.handlerOverlayClick}

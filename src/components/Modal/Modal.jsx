@@ -2,6 +2,14 @@ import { Component } from 'react';
 import PropTypes from 'prop-types';
 
 class Modal extends Component {
+  componentDidMount = () => {
+    window.addEventListener('keydown', this.onEsc);
+  };
+
+  componentWillUnmount = () => {
+    window.removeEventListener('keydown', this.onEsc);
+  };
+
   onEsc = e => {
     if (e.code !== 'Escape') {
       return;
@@ -14,14 +22,6 @@ class Modal extends Component {
       return;
     }
     this.props.handlerCloseModal();
-  };
-
-  componentDidMount = () => {
-    window.addEventListener('keydown', this.onEsc);
-  };
-
-  componentWillUnmount = () => {
-    window.removeEventListener('keydown', this.onEsc);
   };
 
   render() {
@@ -42,10 +42,18 @@ Modal.propTypes = {
 };
 
 // import { Component } from 'react';
+// import PropTypes from 'prop-types';
 
 // class Modal extends Component {
 //   onEsc = e => {
 //     if (e.code !== 'Escape') {
+//       return;
+//     }
+//     this.props.handlerCloseModal();
+//   };
+
+//   onOverlayClick = ({ target }) => {
+//     if (!target.classList.contains('overlay')) {
 //       return;
 //     }
 //     this.props.handlerCloseModal();
@@ -61,7 +69,7 @@ Modal.propTypes = {
 
 //   render() {
 //     return (
-//       <div className="overlay" onClick={this.props.handlerOverlayClick}>
+//       <div className="overlay" onClick={this.onOverlayClick}>
 //         <div className="modal">
 //           <img className="image-original" src={this.props.selectedIMG} alt="" />
 //         </div>
@@ -70,3 +78,8 @@ Modal.propTypes = {
 //   }
 // }
 // export default Modal;
+
+// Modal.propTypes = {
+//   selectedIMG: PropTypes.string.isRequired,
+//   handlerCloseModal: PropTypes.func.isRequired,
+// };
