@@ -19,9 +19,12 @@ export class App extends Component {
   };
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (prevState.searchText !== this.state.searchText) {
-      this.setState({ currentPage: 1, items: [], error: '', isLoading: true });
-      fetchPixabay(this.state.searchText, 1)
+    if (
+      prevState.searchText !== this.state.searchText ||
+      prevState.currentPage !== this.state.currentPage
+    ) {
+      this.setState({ isLoading: true });
+      fetchPixabay(this.state.searchText, this.state.currentPage)
         .then(resp => {
           if (!resp.ok) {
             this.setState({
@@ -35,34 +38,18 @@ export class App extends Component {
         .then(data => {
           if (data.totalHits === 0) {
             this.setState({ error: 'Sorry, nothing' });
+            throw new Error();
           } else {
             this.setState({
               error: '',
-              items: data.hits,
+              items:
+                prevState.currentPage === this.state.currentPage
+                  ? data.hits
+                  : [...prevState.items, ...data.hits],
               totalHits: data.totalHits,
               isLoading: false,
             });
           }
-        })
-        .catch(err => console.log(err))
-        .finally(() => {
-          this.setState({ isLoading: false });
-        });
-    } else if (prevState.currentPage < this.state.currentPage) {
-      this.setState({ isLoading: true });
-      fetchPixabay(this.state.searchText, this.state.currentPage)
-        .then(resp => {
-          if (!resp.ok) {
-            this.setState({ error: 'Sorry, something not good', items: [] });
-            throw new Error();
-          }
-          return resp.json();
-        })
-        .then(data => {
-          this.setState({
-            error: '',
-            items: [...prevState.items, ...data.hits],
-          });
         })
         .catch(err => console.log(err))
         .finally(() => {
@@ -88,7 +75,7 @@ export class App extends Component {
   };
 
   handlerSubmit = value => {
-    this.setState({ searchText: value });
+    this.setState({ searchText: value, currentPage: 1, items: [], error: '' });
   };
 
   render() {
